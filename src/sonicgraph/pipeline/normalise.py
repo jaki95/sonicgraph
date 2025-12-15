@@ -1,4 +1,5 @@
 import hashlib
+import json
 import re
 
 from sonicgraph.pipeline.am import (
@@ -134,12 +135,22 @@ def normalise_tracks(
                 track_count=rt.track_count,
                 release_date=rt.release_date.date() if rt.release_date else None,
                 date_added=rt.date_added.date() if rt.date_added else None,
-                bpm=rt.bit_rate,
                 genre=rt.genre,
                 year=rt.year,
                 compilation=rt.compilation,
             ),
         )
+
+    json.dump(
+        {
+            "artists": artists,
+            "albums": albums,
+            "tracks": tracks,
+        },
+        open("normalised.json", "w"),
+        indent=2,
+        default=str,
+    )
 
     return artists, albums, tracks
 

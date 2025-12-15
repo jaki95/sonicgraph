@@ -17,7 +17,6 @@ class RawAMTrack(BaseModel):
     year: int | None
     release_date: datetime.datetime | None
     date_added: datetime.datetime | None
-    bit_rate: int | None
     compilation: bool | None
 
 
@@ -29,15 +28,15 @@ class Track(BaseModel):
     artist_ids: list[str]
     raw_artists_str: str
     album_id: str | None = None
-    album_artist_ids: list[str] | None
-    genre: str | None
+    album_artist_ids: list[str] | None = None
+    genre: str | None = None
     duration: int
-    bpm: int | None
+    bpm: int | None = None
     track_number: int | None
     track_count: int | None
-    year: int | None
-    release_date: datetime.date | None
-    date_added: datetime.date | None
+    year: int | None = None
+    release_date: datetime.date | None = None
+    date_added: datetime.date | None = None
     compilation: bool | None
     source: str = "apple-music"
 
