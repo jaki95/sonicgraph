@@ -1,7 +1,7 @@
 import plistlib
 from pathlib import Path
 
-from models import RawAMTrack
+from sonicgraph.pipeline.models import RawAMTrack
 
 LIBRARY_PATH = Path("data/am_library.xml")
 
@@ -31,6 +31,7 @@ def extract_raw_tracks(library: dict) -> list[RawAMTrack]:
             release_date=t.get("Release Date"),
             date_added=t.get("Date Added"),
             bit_rate=t.get("Bit Rate"),
+            compilation=t.get("Compilation"),
         )
         tracks.append(track)
 
