@@ -1,35 +1,44 @@
 import plistlib
 from pathlib import Path
 
-from models import Track
+from models import RawAMTrack
 
 LIBRARY_PATH = Path("data/am_library.xml")
+
 
 def load_apple_music_library(path: Path) -> dict:
     with path.open("rb") as f:
         library = plistlib.load(f)
     return library
 
-def extract_raw_tracks(library: dict) -> list[dict]:
+
+def extract_raw_tracks(library: dict) -> list[RawAMTrack]:
     tracks = []
     for _, t in library.get("Tracks", {}).items():
-        track = Track(
-            title=t.get("Name"),
-            artist_ids=[t.get("Artist")],
+        if not t.get("Name") or not t.get("Artist"):
+            continue
+
+        track = RawAMTrack(
+            name=t.get("Name"),
+            artist=t.get("Artist"),
+            album_artist=t.get("Album Artist"),
             album=t.get("Album"),
-            album_id=t.get("Album"),
-            bpm=t.get("BPM"),
             genre=t.get("Genre"),
+            total_time=t.get("Total Time"),
+            track_number=t.get("Track Number"),
+            track_count=t.get("Track Count"),
             year=t.get("Year"),
-            source="apple_music",
+            release_date=t.get("Release Date"),
+            date_added=t.get("Date Added"),
+            bit_rate=t.get("Bit Rate"),
         )
         tracks.append(track)
+
     return tracks
 
 
 if __name__ == "__main__":
     lib = load_apple_music_library(LIBRARY_PATH)
-    print(f"Loaded keys: {lib.keys()}")
     print(f"Number of tracks: {len(lib.get('Tracks', {}))}")
     tracks = extract_raw_tracks(lib)
     print(f"First track: {tracks[0]}")
