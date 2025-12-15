@@ -40,8 +40,10 @@ def make_artist_id(artist_name: str) -> str:
     return make_id("artist", artist_name)
 
 
-def make_track_id(track_name: str, album_id: str, artist_id: str) -> str:
-    return make_id("track", track_name, album_id, artist_id)
+def make_track_id(
+    track_name: str, album_id: str, artist_id: str, track_number: str
+) -> str:
+    return make_id("track", track_name, album_id, artist_id, track_number)
 
 
 def normalise_artist(name: str) -> list[str]:
@@ -115,6 +117,7 @@ def normalise_tracks(
             rt.name,
             album_id or "",
             rt.artist,
+            str(rt.track_number) if rt.track_number else "",
         )
 
         tracks.setdefault(

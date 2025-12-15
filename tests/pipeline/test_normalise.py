@@ -66,16 +66,17 @@ def test_album_id_depends_on_artist():
 
 def test_track_id_disambiguation():
     album_id = "album123"
+    artist_id = "artist123"
 
-    t1 = make_track_id("Intro", album_id, "1")
-    t2 = make_track_id("Intro", album_id, "2")
+    t1 = make_track_id("Intro", album_id, artist_id, "1")
+    t2 = make_track_id("Intro", album_id, artist_id, "2")
 
     assert t1 != t2
 
 
 def test_track_id_deterministic():
-    t1 = make_track_id("Track", "album", "1")
-    t2 = make_track_id("Track", "album", "1")
+    t1 = make_track_id("Track", "album", "artist", "1")
+    t2 = make_track_id("Track", "album", "artist", "1")
     assert t1 == t2
 
 
