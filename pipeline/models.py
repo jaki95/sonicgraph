@@ -1,36 +1,55 @@
-import hashlib
-from pydantic import BaseModel, Field, model_validator
+import datetime
+
+from pydantic import BaseModel
+
+
+class RawAMTrack(BaseModel):
+    """Represents a track exported from Apple Music."""
+
+    name: str
+    artist: str
+    album_artist: str | None
+    album: str | None
+    genre: str | None
+    total_time: int
+    track_number: int | None
+    track_count: int | None
+    year: int | None
+    release_date: datetime.datetime | None
+    date_added: datetime.datetime | None
+    bit_rate: int | None
+    compilation: bool = False
 
 
 class Track(BaseModel):
     """Represents a music track with metadata."""
-    
+
     id: str | None = None
     title: str
     artist_ids: list[str]
-    album_id: str
+    album_id: str | None = None
+    album_artist_ids: list[str] | None
+    genre: str | None
+    duration: int
     bpm: int | None
-    genre: str | None = None
+    track_number: int | None
+    track_count: int | None
     year: int | None
-    source: str
+    release_date: datetime.date | None
+    date_added: datetime.date
+    compilation: bool
+    source: str = "apple-music"
 
-    @model_validator(mode='after')
-    def compute_id(self) -> 'Track':
-        """Compute the id field as a hash of title and artist_ids."""
-        if self.id is None:
-            # Join artist_ids for hashing (sorted for consistency)
-            artist_str = ','.join(sorted(self.artist_ids))
-            self.id = hashlib.sha256(f"{self.title}{artist_str}".encode()).hexdigest()
-        return self
 
 class Artist(BaseModel):
     id: str
     name: str
-    aliases: list[str]
+    aliases: list[str] = []
+
 
 class Album(BaseModel):
     id: str
     title: str
     artist_ids: list[str]
     year: int | None
-    label: str
+    label: str | None = None
