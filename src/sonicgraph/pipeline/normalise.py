@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 
+from sonicgraph import DATA_FOLDER
 from sonicgraph.pipeline.am import (
     LIBRARY_PATH,
     extract_raw_tracks,
@@ -147,7 +148,7 @@ def normalise_tracks(
             "albums": albums,
             "tracks": tracks,
         },
-        open("normalised.json", "w"),
+        open(DATA_FOLDER / "am_library_imported.json", "w"),
         indent=2,
         default=str,
     )
