@@ -3,49 +3,8 @@ from sonicgraph.pipeline.normalise import (
     make_album_id,
     make_artist_id,
     make_track_id,
-    normalise_artist,
     normalise_tracks,
 )
-
-
-def test_single_artist():
-    assert normalise_artist("Chlär") == ["Chlär"]
-
-
-def test_ampersand_split():
-    assert normalise_artist("Ben Klock & Marcel Dettmann") == [
-        "Ben Klock",
-        "Marcel Dettmann",
-    ]
-
-
-def test_feat_split():
-    assert normalise_artist("Regal feat. Amelie Lens") == [
-        "Regal",
-        "Amelie Lens",
-    ]
-
-
-def test_x_split():
-    assert normalise_artist("DVS1 x Oscar Mulero") == [
-        "DVS1",
-        "Oscar Mulero",
-    ]
-
-
-def test_slash_split():
-    assert normalise_artist("Jeff Mills / Robert Hood") == [
-        "Jeff Mills",
-        "Robert Hood",
-    ]
-
-
-def test_no_over_split_band_name():
-    assert normalise_artist("A Tribe Called Quest") == ["A Tribe Called Quest"]
-
-
-def test_empty_artist():
-    assert normalise_artist("") == []
 
 
 def test_artist_id_deterministic():
@@ -91,7 +50,6 @@ def make_track(**kwargs):
         track_count=10,
         release_date=None,
         date_added=None,
-        bit_rate=256,
         genre="Techno",
         year=2024,
         compilation=False,

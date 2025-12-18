@@ -30,7 +30,6 @@ def extract_raw_tracks(library: dict) -> list[RawAMTrack]:
             year=t.get("Year"),
             release_date=t.get("Release Date"),
             date_added=t.get("Date Added"),
-            bit_rate=t.get("Bit Rate"),
             compilation=t.get("Compilation"),
         )
         tracks.append(track)
