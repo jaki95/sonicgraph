@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from functools import lru_cache
 
 import pandas as pd
@@ -42,11 +43,35 @@ def get_artist_id(name: str) -> str:
     return make_artist_id(name)
 
 
+VARIOUS_ARTISTS_ID = make_artist_id("Various Artists")
+
+
 def get_or_create_artist(artists: dict[str, Artist], name: str) -> str:
     aid = get_artist_id(name)
     if aid not in artists:
         artists[aid] = Artist(id=aid, name=name)
     return aid
+
+
+def canonicalise_track_title(title: str) -> str:
+    title = title.lower().strip()
+    title = re.sub(r"\s+", " ", title)
+    title = re.sub(r"\(.*?\)", "", title)
+    return title
+
+
+def track_fingerprint(
+    title: str,
+    album_id: str | None,
+    duration: int | None,
+    track_number: int | None,
+) -> tuple:
+    return (
+        canonicalise_track_title(title),
+        album_id,
+        round(duration or 0, -2),
+        track_number,
+    )
 
 
 def normalise_tracks(
@@ -61,6 +86,8 @@ def normalise_tracks(
     artists: dict[str, Artist] = {}
     albums: dict[str, Album] = {}
     tracks: dict[str, Track] = {}
+
+    seen_tracks: dict[tuple, str] = {}
 
     for rt in raw_tracks:
         track_artist_names = parse_artists(rt.artist, rt.name)
@@ -82,27 +109,50 @@ def normalise_tracks(
             unknown_id = get_or_create_artist(artists, "Unknown Artist")
             track_artist_ids = [unknown_id]
 
-        primary_artist_id = (
-            album_artist_ids[0] if album_artist_ids else track_artist_ids[0]
-        )
+        if rt.compilation:
+            primary_album_artist_id = VARIOUS_ARTISTS_ID
+            artists.setdefault(
+                VARIOUS_ARTISTS_ID,
+                Artist(
+                    id=VARIOUS_ARTISTS_ID,
+                    name="Various Artists",
+                ),
+            )
+        else:
+            primary_album_artist_id = (
+                album_artist_ids[0] if album_artist_ids else track_artist_ids[0]
+            )
 
         album_id = None
         if rt.album:
-            album_id = make_album_id(rt.album, primary_artist_id)
+            album_id = make_album_id(rt.album, primary_album_artist_id)
             if album_id not in albums:
                 albums[album_id] = Album(
                     id=album_id,
                     title=rt.album,
                     artist_ids=album_artist_ids or track_artist_ids,
                     year=rt.year,
+                    is_compilation=bool(rt.compilation),
                 )
 
         track_id = make_track_id(
             rt.name,
             album_id or "",
-            primary_artist_id,
+            primary_album_artist_id,
             str(rt.track_number or ""),
         )
+
+        fingerprint = track_fingerprint(
+            rt.name,
+            album_id,
+            rt.total_time,
+            rt.track_number,
+        )
+
+        if fingerprint in seen_tracks:
+            continue
+
+        seen_tracks[fingerprint] = track_id
 
         if track_id not in tracks:
             tracks[track_id] = Track(

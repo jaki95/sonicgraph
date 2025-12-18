@@ -53,3 +53,4 @@ class Album(BaseModel):
     artist_ids: list[str]
     year: int | None
     label: str | None = None
+    is_compilation: bool = False
