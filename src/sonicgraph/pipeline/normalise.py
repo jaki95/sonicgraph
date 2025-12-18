@@ -1,5 +1,8 @@
 import hashlib
 import json
+from functools import lru_cache
+
+import pandas as pd
 
 from sonicgraph import DATA_FOLDER
 from sonicgraph.pipeline.am import (
@@ -34,6 +37,18 @@ def make_track_id(
     return make_id("track", track_name, album_id, artist_id, track_number)
 
 
+@lru_cache(maxsize=None)
+def get_artist_id(name: str) -> str:
+    return make_artist_id(name)
+
+
+def get_or_create_artist(artists: dict[str, Artist], name: str) -> str:
+    aid = get_artist_id(name)
+    if aid not in artists:
+        artists[aid] = Artist(id=aid, name=name)
+    return aid
+
+
 def normalise_tracks(
     raw_tracks: list[RawAMTrack],
 ) -> tuple[list[Artist], list[Album], list[Track]]:
@@ -48,65 +63,53 @@ def normalise_tracks(
     tracks: dict[str, Track] = {}
 
     for rt in raw_tracks:
-        artist_names = parse_artists(rt.artist, rt.name)
-        if not artist_names:
+        track_artist_names = parse_artists(rt.artist, rt.name)
+        if not track_artist_names:
             continue
 
-        artist_ids: list[str] = []
+        track_artist_ids = [
+            get_or_create_artist(artists, name) for name in track_artist_names
+        ]
+
+        # Album artists
         album_artist_ids: list[str] = []
+        if rt.album_artist:
+            for name in parse_artists(rt.album_artist, ""):
+                album_artist_ids.append(get_or_create_artist(artists, name))
 
-        # Create/retrieve artist entities for track artists
-        for name in artist_names:
-            aid = make_artist_id(name)
-            artists.setdefault(aid, Artist(id=aid, name=name))
-            artist_ids.append(aid)
+        # Fallback artist
+        if not track_artist_ids:
+            unknown_id = get_or_create_artist(artists, "Unknown Artist")
+            track_artist_ids = [unknown_id]
 
-        # Process album information
-        album_id: str | None = None
+        primary_artist_id = (
+            album_artist_ids[0] if album_artist_ids else track_artist_ids[0]
+        )
+
+        album_id = None
         if rt.album:
-            # Parse album artist if different from track artist
-            if rt.album_artist:
-                for name in parse_artists(rt.album_artist, ""):
-                    aid = make_artist_id(name)
-                    artists.setdefault(aid, Artist(id=aid, name=name))
-                    album_artist_ids.append(aid)
-
-            # Ensure we have at least one artist ID
-            if not artist_ids:
-                artist_ids.append(make_artist_id("Unknown Artist"))
-
-            # Use album artist if available, otherwise primary track artist
-            primary_artist_id = (
-                album_artist_ids[0] if album_artist_ids else artist_ids[0]
-            )
-
             album_id = make_album_id(rt.album, primary_artist_id)
-
-            albums.setdefault(
-                album_id,
-                Album(
+            if album_id not in albums:
+                albums[album_id] = Album(
                     id=album_id,
                     title=rt.album,
-                    artist_ids=album_artist_ids or artist_ids,
+                    artist_ids=album_artist_ids or track_artist_ids,
                     year=rt.year,
-                ),
-            )
+                )
 
-        # Create track entity
         track_id = make_track_id(
             rt.name,
             album_id or "",
-            rt.artist,
-            str(rt.track_number) if rt.track_number else "",
+            primary_artist_id,
+            str(rt.track_number or ""),
         )
 
-        tracks.setdefault(
-            track_id,
-            Track(
+        if track_id not in tracks:
+            tracks[track_id] = Track(
                 id=track_id,
                 title=rt.name,
                 raw_artists_str=rt.artist,
-                artist_ids=artist_ids,
+                artist_ids=track_artist_ids,
                 album_artist_ids=album_artist_ids,
                 album_id=album_id,
                 duration=rt.total_time,
@@ -117,8 +120,7 @@ def normalise_tracks(
                 genre=rt.genre,
                 year=rt.year,
                 compilation=rt.compilation,
-            ),
-        )
+            )
 
     # Export to JSON for debugging/inspection
     _export_library_data(artists, albums, tracks)
@@ -157,10 +159,18 @@ def main() -> None:
     raw_tracks = extract_raw_tracks(lib)
     artists, albums, tracks = normalise_tracks(raw_tracks)
 
+    artists_df = pd.DataFrame(artists)
+    albums_df = pd.DataFrame(albums)
+    tracks_df = pd.DataFrame(tracks)
+
     # Print summary
     print(f"Artist count: {len(artists)}")
     print(f"Album count: {len(albums)}")
     print(f"Track count: {len(tracks)}")
+
+    print(f"{artists_df.head()}")
+    print(f"{albums_df.head()}")
+    print(f"{tracks_df.head()}")
 
     # Example: lookup specific album
     album_name = "Paces of Places"
