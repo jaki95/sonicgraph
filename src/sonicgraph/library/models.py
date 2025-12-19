@@ -3,7 +3,7 @@ import datetime
 from pydantic import BaseModel
 
 
-class RawAMTrack(BaseModel):
+class RawTrack(BaseModel):
     """Represents a track exported from Apple Music."""
 
     name: str
@@ -54,3 +54,9 @@ class Album(BaseModel):
     year: int | None
     label: str | None = None
     is_compilation: bool = False
+
+
+class Library(BaseModel):
+    artists: list[Artist]
+    albums: list[Album]
+    tracks: list[Track]
