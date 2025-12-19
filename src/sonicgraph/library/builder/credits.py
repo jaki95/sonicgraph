@@ -73,9 +73,9 @@ def _clean_artist_token(token: str) -> str:
     return token.strip().strip("()[]{}.,;:-")
 
 
-def parse_artists(artist_name: str, track_name: str) -> list[str]:
+def extract_artists(artist_name: str, track_name: str) -> list[str]:
     """
-    Parse all artist names from artist field and track title.
+    Extract all artist names from artist field and track title.
     """
     artists: set[str] = set()
 

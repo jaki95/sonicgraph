@@ -1,4 +1,5 @@
 from sonicgraph.library.builder.builder import Builder
+from sonicgraph.library.builder.credits import extract_artists
 from sonicgraph.library.builder.helpers import (
     VARIOUS_ARTISTS_ID,
     export_library_data,
@@ -7,7 +8,6 @@ from sonicgraph.library.builder.helpers import (
     make_track_id,
     track_fingerprint,
 )
-from sonicgraph.library.builder.parse import parse_artists
 from sonicgraph.library.loader.apple_music import AppleMusicLibraryLoader
 from sonicgraph.library.models import Album, Artist, Library, RawTrack, Track
 
@@ -27,7 +27,7 @@ class AppleMusicLibraryBuilder(Builder):
         seen_tracks: dict[tuple, str] = {}
 
         for rt in raw_tracks:
-            track_artist_names = parse_artists(rt.artist, rt.name)
+            track_artist_names = extract_artists(rt.artist, rt.name)
             if not track_artist_names:
                 continue
 
@@ -38,7 +38,7 @@ class AppleMusicLibraryBuilder(Builder):
             # Album artists
             album_artist_ids: list[str] = []
             if rt.album_artist:
-                for name in parse_artists(rt.album_artist, ""):
+                for name in extract_artists(rt.album_artist, ""):
                     album_artist_ids.append(get_or_create_artist(artists, name))
 
             # Fallback artist
@@ -124,4 +124,4 @@ if __name__ == "__main__":
     raw_tracks = loader.parse()
     builder = AppleMusicLibraryBuilder()
     library = builder.build(raw_tracks)
-    print(f"First track: {library.Tracks[0]}")
+    print(f"First track: {library.tracks[0]}")

@@ -1,4 +1,4 @@
-from sonicgraph.library.builder.parse import parse_artists
+from sonicgraph.library.builder.credits import parse_artists
 
 
 def test_single_artist():
